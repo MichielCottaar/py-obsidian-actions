@@ -18,5 +18,5 @@ select = [
     "N", # pep8-naming
     "B", # flake8-bugbear
 ]
-ignore = ["D203","D212"]
+ignore = ["D203","D212","E501"]
 src = ["src"]
