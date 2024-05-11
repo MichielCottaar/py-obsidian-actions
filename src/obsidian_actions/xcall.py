@@ -36,6 +36,17 @@ def xcall_binary() -> str:
     raise FileNotFoundError("Did not find the `xcall` binary. Has `xcall.app` been installed from https://github.com/martinfinke/xcall.")
 
 
+def update_key(key, value):
+    """
+    Update python keyword argument name to URL key->value pair.
+
+    Replaces "_" with "-" in `key`.
+    Replace python True/False in `value` with true/false strings.
+    """
+    new_key = key.replace("-", "_")
+    new_value = str(value).lower() if isinstance(value, bool) else value
+    return new_key + "=" + new_value
+
 def build_url(app_name: str, *actions: str, **keywords: str) -> str:
     """
     Build the URL used to call a specific application.
@@ -50,7 +61,7 @@ def build_url(app_name: str, *actions: str, **keywords: str) -> str:
         return short_app_name
 
     action_string = "/".join(actions)
-    keyword_string = "?".join(key + "=" + value for (key, value) in keywords.items())
+    keyword_string = "&".join(update_key(key, value) for (key, value) in keywords.items())
     if len(keywords) > 0:
         keyword_string = "?" + keyword_string
 
@@ -76,10 +87,30 @@ def xcall_raw(app_name: str, *actions: str, **keywords: str) -> str:
     else:
         url = build_url(app_name, *actions, **keywords)
 
-    (out, err) = run([binary, "-url", url], capture_output=True)
-    if len(err) > 0:
-        raise ChildProcessError("{app_name} returned an error message: {err}")
-    return out.decode()
+    proc = run([binary, "-url", url], capture_output=True)
+    if len(proc.stderr) > 0:
+        err = try_json_parse(proc.stderr.decode())
+        raise ChildProcessError(f"{url} returned an error message: {err['errorMessage']}")
+    return proc.stdout.decode()
+
+
+def try_json_parse(input_string: str):
+    """
+    Try parsing the input string if it looks like a JSON.
+
+    Otherwise, the input string is returned.
+    """
+    if not isinstance(input_string, str):
+        return input_string
+    stripped = input_string.strip()
+    if stripped[0] == "[" and stripped[-1] == "]":
+        return [try_json_parse(elem) for elem in json.loads(input_string)]
+    if stripped[0] == "{" and stripped[-1] == "}":
+        return {
+            key: try_json_parse(value)
+            for key, value in json.loads(input_string).items()
+        }
+    return input_string
 
 
 def xcall(app_name: str, *actions: str, **keywords: str) -> str:
@@ -93,4 +124,4 @@ def xcall(app_name: str, *actions: str, **keywords: str) -> str:
     The URL can be defined based on the `app_name` and `actions`/`keywords`
     as described in :func:`build_url` or by supplying the URL directly as a string.
     """
-    return json.loads(xcall_raw(app_name, *actions, **keywords))
+    return try_json_parse(xcall_raw(app_name, *actions, **keywords))
