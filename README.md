@@ -1,8 +1,3 @@
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/py-obsidian-actions)](https://pypi.org/project/py-obsidian-actions/)
-[![Documentation](https://img.shields.io/badge/Documentation-py-obsidian-actions-blue)](https://open.win.ox.ac.uk/pages/MichielCottaar/py-obsidian-actions)
-[![Pipeline status](https://github.com/MichielCottaar/py-obsidian-actions/badges/main/pipeline.svg)](https://github.com/MichielCottaar/py-obsidian-actions/-/pipelines/latest)
-[![Coverage report](https://github.com/MichielCottaar/py-obsidian-actions/badges/main/coverage.svg)](https://open.win.ox.ac.uk/pages/MichielCottaar/py-obsidian-actions/htmlcov)
-
 Python interface to the obsidian-actions-uri (https://github.com/czottmann/obsidian-actions-uri).
 This package is still in alpha stage and being actively written.
 
