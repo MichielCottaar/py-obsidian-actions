@@ -3,7 +3,8 @@
 [![Pipeline status](https://github.com/MichielCottaar/py-obsidian-actions/badges/main/pipeline.svg)](https://github.com/MichielCottaar/py-obsidian-actions/-/pipelines/latest)
 [![Coverage report](https://github.com/MichielCottaar/py-obsidian-actions/badges/main/coverage.svg)](https://open.win.ox.ac.uk/pages/MichielCottaar/py-obsidian-actions/htmlcov)
 
-python interface to the obsidian-actions-uri (https://github.com/czottmann/obsidian-actions-uri)
+Python interface to the obsidian-actions-uri (https://github.com/czottmann/obsidian-actions-uri).
+This package is still in alpha stage and being actively written.
 
 # Installation
 ```shell
@@ -29,26 +30,9 @@ Development tools can be installed using:
 pip install -r requirements_dev.txt
 pre-commit install  # installs pre-commit hooks to keep the code clean
 ```
+[Pull requests](https://github.com/MichielCottaar/py-obsidian-actions/pulls) with any bug fixes are always welcome.
 
-
-## Running tests
-Tests are run using the [pytest](https://docs.pytest.org) framework. They can be run from the project root as:
-```shell
-pytest src/tests
-```
-
-## Compiling documentation
-The documentation is build using [sphinx](https://www.sphinx-doc.org/en/master/). After installation (`pip install sphinx`) run:
-```shell
-cd doc
-sphinx-build source build
-open build/index.html
-```
-
-## Contributing
-[Merge requests](https://github.com/MichielCottaar/py-obsidian-actions/-/merge_requests) with any bug fixes or documentation updates are always welcome.
-
-For new features, please raise an [issue](https://github.com/MichielCottaar/py-obsidian-actions/-/issues) to allow for discussion before you spend the time implementing them.
+For new features, please raise an [issue](https://github.com/MichielCottaar/py-obsidian-actions/issues) to allow for discussion before you spend the time implementing them.
 
 ## Releasing new versions
 - Run `bump2version` (install using `pip install bump2version`)
