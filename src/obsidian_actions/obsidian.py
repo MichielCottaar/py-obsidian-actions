@@ -245,6 +245,10 @@ class Tags:
         self._update()
         return self._list
 
+    def update(self, ):
+        """Schedule tags to be updated when they get used again."""
+        self.to_update = True
+
     def _update(self, ):
         """Read the tags from the vault if `self.to_update` is set to True."""
         if not self.to_update:
