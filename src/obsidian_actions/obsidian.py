@@ -5,6 +5,8 @@ For this to work you will have to have the plugin installed in Obsidian
 and have `xcall.app` installed.
 """
 
+from typing import Any
+
 from .xcall import xcall
 
 
@@ -20,6 +22,7 @@ class Vault:
     def __init__(self, name) -> None:
         """Prepare to run actions in Obsidian vault with the given `name`."""
         self.name = name
+        self.tags = Tags(self)
 
     def __call__(self, *actions, **kwargs):
         """
@@ -227,6 +230,53 @@ class Vault:
             silent=silent
         )
 
-    def tags_list(self, ):
-        """List all tags used in the vault."""
-        return self("tags", "list")
+
+class Tags:
+    """All tabs being used in the vault."""
+
+    def __init__(self, vault: Vault):
+        """Create new `Tags` for given `vault`."""
+        self.vault = vault
+        self.to_update = True
+
+    @property
+    def list(self, ):
+        """Return list with all tags used in the vault."""
+        self._update()
+        return self._list
+
+    def _update(self, ):
+        """Read the tags from the vault if `self.to_update` is set to True."""
+        if not self.to_update:
+            return
+        self._list = [Tag(name) for name in self.vault("tags", "list")]
+        self._attributes = {t.attribute_key: t for t in self._list}
+
+    def __dir__(self, ):
+        """Allow tags to ge accessed using autocomplete."""
+        self._update()
+        return ["list", "update"] + list(self._attributes.keys())
+
+    def __getattr__(self, name: str) -> Any:
+        """Get a specific tag."""
+        self._update()
+        if name in self._attributes.keys():
+            return self._attributes[name]
+        raise AttributeError(f"Tag with name {name} is not used in this vault.")
+
+
+class Tag:
+    """Represents a single tag used in the vault."""
+
+    def __init__(self, name: str):
+        """Create a new tag with given `name`."""
+        self.name = name.removeprefix("#")
+
+    @property
+    def attribute_key(self, ):
+        """Key that can be used as attribute in python."""
+        return self.name.replace("-", "_")
+
+    def __repr__(self, ):
+        """Return string representation of tag."""
+        return "#" + self.name
