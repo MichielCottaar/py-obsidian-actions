@@ -5,7 +5,8 @@ For this to work you will have to have the plugin installed in Obsidian
 and have `xcall.app` installed.
 """
 
-from typing import Any
+from collections import UserDict
+from typing import Collection, Union
 
 from .xcall import xcall
 
@@ -22,7 +23,7 @@ class Vault:
     def __init__(self, name) -> None:
         """Prepare to run actions in Obsidian vault with the given `name`."""
         self.name = name
-        self.tags = Tags(self)
+        self.commands = Commands(self)
 
     def __call__(self, *actions, **kwargs):
         """
@@ -37,6 +38,16 @@ class Vault:
         if len(result) == 1:
             return list(result.values())[0]
         return result
+
+    @property
+    def tags(self, ) -> "Tags":
+        """Return collection of all tags used in vault."""
+        return Tags(self)
+
+    @property
+    def notes(self, ) -> "Notes":
+        """Return dict-like object of all notes in vault."""
+        return Notes(self)
 
     def list_commands(self, ):
         """
@@ -234,39 +245,35 @@ class Vault:
 class Tags:
     """All tabs being used in the vault."""
 
-    def __init__(self, vault: Vault):
+    def __init__(self, vault: Vault, tags: Collection[Union[str, "Tag"]]=None):
         """Create new `Tags` for given `vault`."""
         self.vault = vault
-        self.to_update = True
+        if tags is None:
+            tags = self.vault("tag", "list")
+        self.list = [tag if isinstance(tag, Tag) else Tag(tag) for tag in tags]
 
     @property
-    def list(self, ):
-        """Return list with all tags used in the vault."""
-        self._update()
-        return self._list
-
-    def update(self, ):
-        """Schedule tags to be updated when they get used again."""
-        self.to_update = True
-
-    def _update(self, ):
-        """Read the tags from the vault if `self.to_update` is set to True."""
-        if not self.to_update:
-            return
-        self._list = [Tag(name) for name in self.vault("tags", "list")]
-        self._attributes = {t.attribute_key: t for t in self._list}
+    def _attributes(self, ):
+        """Return tags as dictionary."""
+        return {tag.attribute_key: tag for tag in self.list}
 
     def __dir__(self, ):
         """Allow tags to ge accessed using autocomplete."""
-        self._update()
         return ["list", "update"] + list(self._attributes.keys())
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str):
         """Get a specific tag."""
-        self._update()
         if name in self._attributes.keys():
             return self._attributes[name]
         raise AttributeError(f"Tag with name {name} is not used in this vault.")
+
+    def __repr__(self, ):
+        """Return result of `repr(tags)`."""
+        return repr(self.list)
+
+    def __str__(self, ):
+        """Return result of `str(tags)`."""
+        return str(self.list)
 
 
 class Tag:
@@ -284,3 +291,115 @@ class Tag:
     def __repr__(self, ):
         """Return string representation of tag."""
         return "#" + self.name
+
+class Notes(UserDict):
+    """Collection of notes in the vault."""
+
+    def __init__(self, vault: Vault, notes: Collection[Union[str, "Note"]]=None):
+        """Create a new set of notes from the `vault`."""
+        self.vault = vault
+        if notes is None:
+            notes = self.vault("note", "list")
+        as_list = [note if isinstance(note, Note) else Note(vault, note) for note in notes]
+        self.data = {note.name: note for note in as_list}
+
+
+class Note:
+    """Representation of a note within Obsidian."""
+
+    def __init__(self, vault: Vault, name: str):
+        """
+        Create a new note.
+
+        Attributes will be lazily loaded.
+        """
+        self.vault = vault
+        self.name = name
+
+    def _load_attributes(self, ):
+        """Load the note and fill out any attributes."""
+        if hasattr(self, "_content"):
+            return
+        reply_get = self.vault("note", "get", file=self.name)
+
+        for param in [
+            "filepath",
+            "front-matter",
+            "content",
+            "properties",
+            "body",
+        ]:
+            attr = "_" + param.replace("-", "_")
+            setattr(self, attr, reply_get["result-" + param])
+
+    @property
+    def filepath(self, ) -> str:
+        """Return file path of note relative to vault root folder."""
+        self._load_attributes()
+        return self._filepath
+
+    @property
+    def content(self, ) -> str:
+        """Return entire content of note."""
+        self._load_attributes()
+        return self._content
+
+    @property
+    def body(self, ) -> str:
+        """Return body of note excluding front matter."""
+        self._load_attributes()
+        return self._body
+
+    @property
+    def front_matter(self, ) -> str:
+        """Return front matter of the note."""
+        self._load_attributes()
+        return self._front_matter
+
+    @property
+    def properties(self, ) -> dict:
+        """Return properties of the note embedded in front matter."""
+        self._load_attributes()
+        return self._properties
+
+
+class Commands(UserDict):
+    """
+    Dictionary of available Obsidian commands.
+
+    Each command is available using its ID.
+    Commands are also available as attributes.
+    """
+
+    def __init__(self, vault: Vault):
+        """Create a new set of commands available in the `vault`."""
+        self.vault = vault
+        commands = self.vault("command", "list")
+        as_list = [command if isinstance(command, Command) else Command(vault, **command) for command in commands]
+        self.data = {command.id: command for command in as_list}
+
+        self._attributes = {command.id.replace(":", "_").replace("-", "_"): command for command in as_list}
+
+    def __dir__(self, ):
+        """Allow tags to ge accessed using autocomplete."""
+        return ["data", "update"] + list(self._attributes.keys())
+
+    def __getattr__(self, name: str):
+        """Get a specific tag."""
+        if name in self._attributes.keys():
+            return self._attributes[name]
+        raise AttributeError(f"Command with id {name} is not used in this vault.")
+
+
+class Command:
+    """Command available in Obsidian."""
+
+    def __init__(self, vault: Vault, id: str, name: str):
+        """Create a new command representation with given `id` and `name`."""
+        self.vault = vault
+        self.id = id
+        self.name = name
+
+    def __call__(self, ):
+        """Run a command in obsidian."""
+        return self.vault("command", "execute", commands=self.id)
