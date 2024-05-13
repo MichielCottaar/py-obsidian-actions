@@ -9,6 +9,7 @@ import os
 import os.path as op
 import shutil
 from subprocess import run
+from urllib.parse import quote
 
 
 def xcall_binary() -> str:
@@ -42,10 +43,11 @@ def update_key(key, value):
 
     Replaces "_" with "-" in `key`.
     Replace python True/False in `value` with true/false strings.
+    Quote any reserved characters in the `value`.
     """
     new_key = key.replace("-", "_")
     new_value = str(value).lower() if isinstance(value, bool) else value
-    return new_key + "=" + new_value
+    return new_key + "=" + quote(new_value)
 
 def build_url(app_name: str, *actions: str, **keywords: str) -> str:
     """
@@ -60,7 +62,7 @@ def build_url(app_name: str, *actions: str, **keywords: str) -> str:
             raise ValueError("Cannot construct an URL with no actions, yet with keywords.")
         return short_app_name
 
-    action_string = "/".join(actions)
+    action_string = "/".join([quote(a) for a in actions])
     keyword_string = "&".join(update_key(key, value) for (key, value) in keywords.items())
     if len(keywords) > 0:
         keyword_string = "?" + keyword_string
