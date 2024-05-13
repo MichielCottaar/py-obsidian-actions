@@ -103,6 +103,8 @@ def try_json_parse(input_string: str):
     if not isinstance(input_string, str):
         return input_string
     stripped = input_string.strip()
+    if len(stripped) == 0:
+        return input_string
     if stripped[0] == "[" and stripped[-1] == "]":
         return [try_json_parse(elem) for elem in json.loads(input_string)]
     if stripped[0] == "{" and stripped[-1] == "}":
