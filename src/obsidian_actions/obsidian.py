@@ -208,7 +208,7 @@ class Tags:
 
 
 class Tag:
-    """Represents a single tag used in the vault."""
+    """Represents a tag used in the vault."""
 
     def __init__(self, name: str):
         """Create a new tag with given `name`."""
