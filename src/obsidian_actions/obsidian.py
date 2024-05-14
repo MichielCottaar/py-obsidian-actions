@@ -59,7 +59,15 @@ class Vault:
             raise ValueError("At least a signle source should be provided for a dataview query.")
         if combine not in ("and", "or") and len(sources) > 1:
             raise ValueError(f"Sources can only be combined using and/or, not {combine}.")
-        full_source = "FROM " + (" " + combine + " ").join([str(s) for s in sources])
+
+        def source_to_string(source):
+            if hasattr(source, "__self__") and source.__name__ == "incoming":
+                return source.__self__.incoming_q
+            if hasattr(source, "__self__") and source.__name__ == "outgoing":
+                return source.__self__.outgoing_q
+            return str(source)
+
+        full_source = "FROM " + (" " + combine + " ").join([source_to_string(s) for s in sources])
 
         return DataviewQuery(self, full_source, fields=fields)
 
@@ -245,7 +253,7 @@ class Note:
         Attributes will be lazily loaded.
         """
         self.vault = vault
-        self.name = name
+        self.name = name.removesuffix(".md")
 
     def _load_attributes(self, ):
         """Load the note and fill out any attributes."""
@@ -293,6 +301,23 @@ class Note:
         self._load_attributes()
         return self._properties
 
+    def incoming(self, ) -> Notes:
+        """Return notes that link to this note."""
+        return self.vault.dataview_query(self.incoming_q)()
+
+    @property
+    def incoming_q(self, ) -> str:
+        """Return string representation of incoming links for dataview query."""
+        return f"[[{self.name}]]"
+
+    def outgoing(self, ) -> Notes:
+        """Return notes linked from this node."""
+        return self.vault.dataview_query(self.incoming_q)()
+
+    @property
+    def outgoing_q(self, ) -> str:
+        """Return string representation of incoming links for dataview query."""
+        return f"outgoing({self.incoming_q})"
 
     def append(self, content, below_headline=None, create_if_not_found=False, ensure_newline=False, silent=False):
         """
