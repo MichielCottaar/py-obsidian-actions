@@ -217,7 +217,7 @@ class Tag:
     @property
     def attribute_key(self, ):
         """Key that can be used as attribute in python."""
-        return self.name.replace("-", "_")
+        return self.name.replace("-", "_").replace("/", "__")
 
     def __repr__(self, ):
         """Return string representation of tag."""
