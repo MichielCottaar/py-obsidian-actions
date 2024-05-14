@@ -427,3 +427,36 @@ class DataviewQuery:
     def __call__(self, ):
         """Run the query and return the result."""
         return self.vault("dataview", self.type.lower() + "-query", dql=str(self))
+
+    def where(self, clause: str):
+        """Filter pages based on fields."""
+        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, "WHERE " + clause)
+
+    def sort(self, field: str, ascending=False):
+        """Sort results by a field."""
+        cmd = field + " " + ("ASCENDING" if ascending else "DESCENDING")
+        if len(self.statements) > 0 and self.statements[-1].startswith("SORT "):
+            statements = self.statements[:-1] + (self.statements[-1] + ", " + cmd, )
+        else:
+            statements = self.statements + ("SORT " + cmd, )
+        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *statements)
+
+    def group_by(self, field: str, new_name=None):
+        """Group results on a field."""
+        if new_name is None:
+            cmd = "GROUP BY " + field
+        else:
+            cmd = "GROUP BY " + field + " AS " + new_name
+        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, cmd)
+
+    def flatten(self, field: str, new_name=None):
+        """Flatten an array in every row yielding one resutl row per entry in the array."""
+        if new_name is None:
+            cmd = "FLATTEN " + field
+        else:
+            cmd = "FLATTEN " + field + " AS " + new_name
+        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, cmd)
+
+    def limit(self, number: int):
+        """Restrict the results to at most `number` values."""
+        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, "LIMIT " + str(number))
