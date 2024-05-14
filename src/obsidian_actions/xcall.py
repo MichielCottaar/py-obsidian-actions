@@ -89,7 +89,7 @@ def xcall_raw(app_name: str, *actions: str, **keywords: str) -> str:
     else:
         url = build_url(app_name, *actions, **keywords)
 
-    proc = run([binary, "-url", url], capture_output=True, timeout=1)
+    proc = run([binary, "-url", url], capture_output=True, timeout=30)
     if len(proc.stderr) > 0:
         err = try_json_parse(proc.stderr.decode())
         raise ChildProcessError(f"{url} returned an error message: {err['errorMessage']}")
