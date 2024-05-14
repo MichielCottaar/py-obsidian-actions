@@ -95,6 +95,50 @@ class Vault:
             name = self("daily-note", "get-current")["filepath"]
         return Note(self, name)
 
+    def weekly_note(self, ):
+        """Get weekly note."""
+        try:
+            name = self("weekly-note", "get-current")["filepath"]
+        except ChildProcessError as e:
+            if "Note couldn't be found" not in e.args[0]:
+                raise
+            self.commands.periodic_notes_open_weekly_note()
+            name = self("weekly-note", "get-current")["filepath"]
+        return Note(self, name)
+
+    def monthly_note(self, ):
+        """Get monthly note."""
+        try:
+            name = self("monthly-note", "get-current")["filepath"]
+        except ChildProcessError as e:
+            if "Note couldn't be found" not in e.args[0]:
+                raise
+            self.commands.periodic_notes_open_monthly_note()
+            name = self("monthly-note", "get-current")["filepath"]
+        return Note(self, name)
+
+    def quarterly_note(self, ):
+        """Get quarterly note."""
+        try:
+            name = self("quarterly-note", "get-current")["filepath"]
+        except ChildProcessError as e:
+            if "Note couldn't be found" not in e.args[0]:
+                raise
+            self.commands.periodic_notes_open_quarterly_note()
+            name = self("quarterly-note", "get-current")["filepath"]
+        return Note(self, name)
+
+    def yearly_note(self, ):
+        """Get yearly note."""
+        try:
+            name = self("yearly-note", "get-current")["filepath"]
+        except ChildProcessError as e:
+            if "Note couldn't be found" not in e.args[0]:
+                raise
+            self.commands.periodic_notes_open_yearly_note()
+            name = self("yearly-note", "get-current")["filepath"]
+        return Note(self, name)
+
     def file_list(self, ):
         """List all files (not just notes) in the vault."""
         return self("file", "list")
