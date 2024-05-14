@@ -49,21 +49,39 @@ class Vault:
         """Return dict-like object of all notes in vault."""
         return Notes(self)
 
-    def dataview_list_query(self, query: str):
+    def dataview_list_query(self, *sources, combine="and"):
         """
-        Run a Dataview LIST query.
+        Create a Dataview LIST query.
 
-        Result is returned as a list.
+        The `sources` can be one of:
+        - tag: `vault.tags.<tag_name>`
+        - folder
+        - incoming links: `vault.notes["<note name>"].incoming`
+        - outgoing links: `vault.notes["<note name>"].outgoing`
         """
-        return self("dataview", "list-query", dql=query)
+        if len(sources) == 0:
+            raise ValueError("At least a signle source should be provided for a dataview query.")
+        if combine not in ("and", "or") and len(sources) > 1:
+            raise ValueError(f"Sources can only be combined using and/or, not {combine}.")
+        full_source = "FROM " + (" " + combine + " ").join([str(s) for s in sources])
+        return DataviewQuery(self, "LIST", None, full_source)
 
-    def dataview_table_query(self, query: str):
+    def dataview_table_query(self, fields, *sources, combine="and"):
         """
         Run a Dataview TABLE query.
 
-        Result is returned as a list of lists.
+        The `sources` can be one of:
+        - tag: `vault.tags.<tag_name>`
+        - folder
+        - incoming links: `vault.notes["<note name>"].incoming`
+        - outgoing links: `vault.notes["<note name>"].outgoing`
         """
-        return self("dataview", "table-query", dql=query)
+        if len(sources) == 0:
+            raise ValueError("At least a signle source should be provided for a dataview query.")
+        if combine not in ("and", "or") and len(sources) > 1:
+            raise ValueError(f"Sources can only be combined using and/or, not {combine}.")
+        full_source = (" " + combine + " ").join([str(s) for s in sources])
+        return DataviewQuery(self, "TABLE", fields, full_source)
 
     def file_list(self, ):
         """List all files (not just notes) in the vault."""
@@ -376,3 +394,36 @@ class Command:
     def __call__(self, ):
         """Run a command in obsidian."""
         return self.vault("command", "execute", commands=self.id)
+
+
+class DataviewQuery:
+    """Represents a Dataview query for the Obsidian vault."""
+
+    def __init__(self, vault: Vault, type: str, fields: Union[None, str], from_statement: str, *statements: str) -> None:
+        """Create a dataview query of the vault consisting of the given statements."""
+        type = type.upper()
+        if type not in ("LIST", "TABLE"):
+            raise ValueError(f"Only LIST and TABLE queries are supported, not {type}")
+        if type == "LIST" and fields is not None:
+            raise ValueError("Fields cannot be set for LIST query type.")
+        if type == "TABLE" and fields is None:
+            raise ValueError("Fields should be set for TABLE query type.")
+
+        self.vault = vault
+        self.type = type
+        self.fields = fields
+        self.from_statement = from_statement
+        self.statements = statements
+
+    def __repr__(self, ):
+        """Get string representation of the Dataview query."""
+        if self.type == "TABLE":
+            field_str = ", ".join(self.fields)
+            first_line = f"TABLE {field_str}"
+        else:
+            first_line = self.type
+        return "\n".join([first_line, self.from_statement] + list(self.statements))
+
+    def __call__(self, ):
+        """Run the query and return the result."""
+        return self.vault("dataview", self.type.lower() + "-query", dql=str(self))

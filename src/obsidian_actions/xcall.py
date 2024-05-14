@@ -108,7 +108,11 @@ def try_json_parse(input_string: str):
     if len(stripped) == 0:
         return input_string
     if stripped[0] == "[" and stripped[-1] == "]":
-        return [try_json_parse(elem) for elem in json.loads(input_string)]
+        try:
+            as_list = json.loads(input_string)
+        except json.JSONDecodeError:
+            return input_string
+        return [try_json_parse(elem) for elem in as_list]
     if stripped[0] == "{" and stripped[-1] == "}":
         return {
             key: try_json_parse(value)
