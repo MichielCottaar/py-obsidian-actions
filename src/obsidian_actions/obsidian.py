@@ -24,6 +24,8 @@ class Vault:
         """Prepare to run actions in Obsidian vault with the given `name`."""
         self.name = name
         self.commands = Commands(self)
+        self.tags = Tags(self)
+        self.notes = Notes(self)
 
     def __call__(self, *actions, **kwargs):
         """
@@ -38,16 +40,6 @@ class Vault:
         if len(result) == 1:
             return list(result.values())[0]
         return {k.removeprefix("result-"): v for k, v in result.items()}
-
-    @property
-    def tags(self, ) -> "Tags":
-        """Return collection of all tags used in vault."""
-        return Tags(self)
-
-    @property
-    def notes(self, ) -> "Notes":
-        """Return dict-like object of all notes in vault."""
-        return Notes(self)
 
     def dataview_query(self, *sources, combine="and", fields=None):
         """
@@ -173,8 +165,6 @@ class Vault:
         return Note(self, filename)
 
 
-
-
 class Tags:
     """All tabs being used in the vault."""
 
@@ -182,7 +172,7 @@ class Tags:
         """Create new `Tags` for given `vault`."""
         self.vault = vault
         if tags is None:
-            tags = self.vault("tag", "list")
+            tags = self.vault("tags", "list")
         self.list = [tag if isinstance(tag, Tag) else Tag(tag) for tag in tags]
 
     @property
