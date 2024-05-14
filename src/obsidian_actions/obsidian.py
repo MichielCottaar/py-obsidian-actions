@@ -84,7 +84,6 @@ class Vault:
             result = self("search", "all-notes", query=query)
             return Notes(self, result)
 
-
     def file_list(self, ):
         """List all files (not just notes) in the vault."""
         return self("file", "list")
@@ -369,6 +368,19 @@ class Note:
     def open(self, ):
         """Open this note in Obsidian."""
         return self("note", "open", file=self.filepath)
+
+    def replace(self, search: str, replace: str, silent=False, regex=False):
+        """Replace text `search` with text `replace` within this note."""
+        cmd = "search-regex-and-replace" if regex else "search-string-and-replace"
+        return self("note", cmd, file=self.filepath, search=search, replace=replace, silent=silent)
+
+    def delete(self, trash=False):
+        """
+        Delete this note from Obsidian.
+
+        Trash the note instead if `trash` is set to True.
+        """
+        return self("note", "trash" if trash else "delete", file=self.filepath)
 
 
 class Commands(UserDict):
