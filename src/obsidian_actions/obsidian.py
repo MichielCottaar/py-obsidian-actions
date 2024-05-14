@@ -49,39 +49,27 @@ class Vault:
         """Return dict-like object of all notes in vault."""
         return Notes(self)
 
-    def dataview_list_query(self, *sources, combine="and"):
+    def dataview_query(self, *sources, combine="and", fields=None):
         """
-        Create a Dataview LIST query.
+        Create a Dataview query.
 
         The `sources` can be one of:
         - tag: `vault.tags.<tag_name>`
         - folder
         - incoming links: `vault.notes["<note name>"].incoming`
         - outgoing links: `vault.notes["<note name>"].outgoing`
+        Multiple source are combined using `combine` (can be set to "and" or "or").
+
+        If `fields` is set a TABLE query is run.
+        Otherwise, a LIST query is run.
         """
         if len(sources) == 0:
             raise ValueError("At least a signle source should be provided for a dataview query.")
         if combine not in ("and", "or") and len(sources) > 1:
             raise ValueError(f"Sources can only be combined using and/or, not {combine}.")
         full_source = "FROM " + (" " + combine + " ").join([str(s) for s in sources])
-        return DataviewQuery(self, "LIST", None, full_source)
 
-    def dataview_table_query(self, fields, *sources, combine="and"):
-        """
-        Run a Dataview TABLE query.
-
-        The `sources` can be one of:
-        - tag: `vault.tags.<tag_name>`
-        - folder
-        - incoming links: `vault.notes["<note name>"].incoming`
-        - outgoing links: `vault.notes["<note name>"].outgoing`
-        """
-        if len(sources) == 0:
-            raise ValueError("At least a signle source should be provided for a dataview query.")
-        if combine not in ("and", "or") and len(sources) > 1:
-            raise ValueError(f"Sources can only be combined using and/or, not {combine}.")
-        full_source = (" " + combine + " ").join([str(s) for s in sources])
-        return DataviewQuery(self, "TABLE", fields, full_source)
+        return DataviewQuery(self, full_source, fields=fields)
 
     def file_list(self, ):
         """List all files (not just notes) in the vault."""
@@ -399,21 +387,17 @@ class Command:
 class DataviewQuery:
     """Represents a Dataview query for the Obsidian vault."""
 
-    def __init__(self, vault: Vault, type: str, fields: Union[None, str], from_statement: str, *statements: str) -> None:
+    def __init__(self, vault: Vault, from_statement: str, *statements: str, fields=None) -> None:
         """Create a dataview query of the vault consisting of the given statements."""
-        type = type.upper()
-        if type not in ("LIST", "TABLE"):
-            raise ValueError(f"Only LIST and TABLE queries are supported, not {type}")
-        if type == "LIST" and fields is not None:
-            raise ValueError("Fields cannot be set for LIST query type.")
-        if type == "TABLE" and fields is None:
-            raise ValueError("Fields should be set for TABLE query type.")
-
         self.vault = vault
-        self.type = type
         self.fields = fields
         self.from_statement = from_statement
         self.statements = statements
+
+    @property
+    def type(self, ):
+        """Return the query type based on whether `fields` are set."""
+        return "LIST" if self.fields is None else "TABLE"
 
     def __repr__(self, ):
         """Get string representation of the Dataview query."""
@@ -426,11 +410,16 @@ class DataviewQuery:
 
     def __call__(self, ):
         """Run the query and return the result."""
-        return self.vault("dataview", self.type.lower() + "-query", dql=str(self))
+        result = self.vault("dataview", self.type.lower() + "-query", dql=str(self))
+        if self.type == "LIST":
+            filenames = [link[2:].split("|")[0] for link in result]
+            return Notes(self.vault, filenames)
+        else:
+            return result
 
     def where(self, clause: str):
         """Filter pages based on fields."""
-        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, "WHERE " + clause)
+        return DataviewQuery(self.vault, self.from_statement, *self.statements, "WHERE " + clause, fields=self.fields)
 
     def sort(self, field: str, ascending=False):
         """Sort results by a field."""
@@ -439,7 +428,7 @@ class DataviewQuery:
             statements = self.statements[:-1] + (self.statements[-1] + ", " + cmd, )
         else:
             statements = self.statements + ("SORT " + cmd, )
-        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *statements)
+        return DataviewQuery(self.vault, self.from_statement, *statements, fields=self.fields)
 
     def group_by(self, field: str, new_name=None):
         """Group results on a field."""
@@ -447,7 +436,7 @@ class DataviewQuery:
             cmd = "GROUP BY " + field
         else:
             cmd = "GROUP BY " + field + " AS " + new_name
-        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, cmd)
+        return DataviewQuery(self.vault, self.from_statement, *self.statements, cmd, fields=self.fields)
 
     def flatten(self, field: str, new_name=None):
         """Flatten an array in every row yielding one resutl row per entry in the array."""
@@ -455,8 +444,8 @@ class DataviewQuery:
             cmd = "FLATTEN " + field
         else:
             cmd = "FLATTEN " + field + " AS " + new_name
-        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, cmd)
+        return DataviewQuery(self.vault, self.from_statement, *self.statements, cmd, fields=self.fields)
 
     def limit(self, number: int):
         """Restrict the results to at most `number` values."""
-        return DataviewQuery(self.vault, self.type, self.fields, self.from_statement, *self.statements, "LIMIT " + str(number))
+        return DataviewQuery(self.vault, self.from_statement, *self.statements, "LIMIT " + str(number), fields=self.fields)
