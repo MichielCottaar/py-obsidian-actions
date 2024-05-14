@@ -84,6 +84,17 @@ class Vault:
             result = self("search", "all-notes", query=query)
             return Notes(self, result)
 
+    def daily_note(self, ):
+        """Get today's daily note."""
+        try:
+            name = self("daily-note", "get-current")["filepath"]
+        except ChildProcessError as e:
+            if "Note couldn't be found" not in e.args[0]:
+                raise
+            self.commands.daily_notes()
+            name = self("daily-note", "get-current")["filepath"]
+        return Note(self, name)
+
     def file_list(self, ):
         """List all files (not just notes) in the vault."""
         return self("file", "list")
@@ -382,6 +393,10 @@ class Note:
         """
         return self("note", "trash" if trash else "delete", file=self.filepath)
 
+    def __repr__(self, ):
+        """Represent note with its name."""
+        return self.name + ".md"
+
 
 class Commands(UserDict):
     """
@@ -423,6 +438,10 @@ class Command:
     def __call__(self, ):
         """Run a command in obsidian."""
         return self.vault("command", "execute", commands=self.id)
+
+    def __repr__(self, ):
+        """Return command name as string representation."""
+        return self.name
 
 
 class DataviewQuery:
