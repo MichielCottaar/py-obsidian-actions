@@ -37,7 +37,7 @@ class Vault:
         result = xcall("obsidian", "actions-uri", *actions, vault=self.name, **use_kwargs)
         if len(result) == 1:
             return list(result.values())[0]
-        return result
+        return {k.removeprefix("result-"): v for k, v in result.items()}
 
     @property
     def tags(self, ) -> "Tags":
@@ -48,26 +48,6 @@ class Vault:
     def notes(self, ) -> "Notes":
         """Return dict-like object of all notes in vault."""
         return Notes(self)
-
-    def list_commands(self, ):
-        """
-        List available obsidian commands.
-
-        These are the commands available in Obsidian from the Command Palette.
-        In the return list each command is represented as a dictionary:
-        - `{id: string, name: string}`
-        """
-        return self("command", "list")
-
-    def execute_command(self, *commands: str, pause_in_secs=None):
-        """
-        Run the passed-in command or commands in sequence in the specified vault.
-
-        - `commands`: command IDs (obtain from :func:`list_commmands`)
-        - `pause_in_secs`: length of the pauls in seconds between commands.
-        """
-        command_string = ",".join(commands)
-        return self("command", "execute", commands=command_string, pause_in_secs=pause_in_secs)
 
     def dataview_list_query(self, query: str):
         """
@@ -285,7 +265,7 @@ class Note:
             "body",
         ]:
             attr = "_" + param.replace("-", "_")
-            setattr(self, attr, reply_get["result-" + param])
+            setattr(self, attr, reply_get[param])
 
     @property
     def filepath(self, ) -> str:
