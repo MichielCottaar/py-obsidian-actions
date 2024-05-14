@@ -154,36 +154,13 @@ class Vault:
         """Return information about plugin and Obsidian."""
         return self("info")
 
-    def note_list(self, ):
-        """List all notes in the vault."""
-        return self("note", "list")
+    @property
+    def active_note(self, ) -> "Note":
+        """Get the currently active note."""
+        as_dict = self("note", "get-active")
+        return Note(self, as_dict["filepath"])
 
-    def note_get(self, name, silent=False, is_full_path=False):
-        """
-        Return a specific note by `name`.
-
-        If `is_full_path` is set to True, `name` is assumed to be the full path.
-        Otherwise, it is just the filename.
-        The extension (`.md`) can be omitted.
-
-        Result will be parsed in the note `body`, `content`, `filepath`, `front-matter`, `properties`.
-        """
-        getter = "get" if is_full_path else "get-first-named"
-        return self("note", getter, file=name, silent=silent)
-
-    def note_get_active(self, ):
-        """
-        Get the currently active note.
-
-        Result will be parsed in the note `body`, `content`, `filepath`, `front-matter`, `properties`.
-        """
-        return self("note", "get-active")
-
-    def note_open(self, name):
-        """Open a specific note in Obsidian."""
-        return self("note", "open", file=name)
-
-    def note_create(self, filename, content=None, template=None, overwrite=False, silent=False):
+    def note_create(self, filename, content=None, template=None, overwrite=False, silent=False) -> "Note":
         """
         Create a note at `filename` in Obsidian.
 
@@ -200,46 +177,16 @@ class Vault:
         apply = "content" if template is None else "template"
         if template is None and content is None:
             content = ""
-        return self(
+        self(
             "note", "create",
             file=filename, apply=apply,
             content=content, template=template,
             if_exists="overwrite" if overwrite else "skip",
             silent=silent
         )
+        return Note(self, filename)
 
-    def note_append(self, filename, content, below_headline=None, create_if_not_found=False, ensure_newline=False, silent=False):
-        """
-        Append `content` to a note.
 
-        Appends `content` to the end of the note at `filename`.
-        If `below_headline` is set, append below that headline instead.
-        `below_headline` should contain the full exact line of how the headline appears in the note.
-        """
-        return self(
-            "note", "append",
-            file=filename, content=content,
-            below_headline=below_headline,
-            create_if_not_found=create_if_not_found,
-            ensure_newline=ensure_newline,
-            silent=silent
-        )
-
-    def note_preppend(self, filename, content, below_headline=None, create_if_not_found=False, ensure_newline=False, silent=False):
-        """
-        Prepend `content` to a note.
-
-        By default the `content` is placed just after the front matter.
-        For more details see :meth:`note_append`.
-        """
-        return self(
-            "note", "prepend",
-            file=filename, content=content,
-            below_headline=below_headline,
-            create_if_not_found=create_if_not_found,
-            ensure_newline=ensure_newline,
-            silent=silent
-        )
 
 
 class Tags:
@@ -303,6 +250,14 @@ class Notes(UserDict):
         as_list = [note if isinstance(note, Note) else Note(vault, note) for note in notes]
         self.data = {note.name: note for note in as_list}
 
+    def __repr__(self, ):
+        """Return string representation of notes."""
+        return repr(set(self.data.keys()))
+
+    def __str__(self, ):
+        """Return string representation of notes."""
+        return str(set(self.data.keys()))
+
 
 class Note:
     """Representation of a note within Obsidian."""
@@ -361,6 +316,44 @@ class Note:
         """Return properties of the note embedded in front matter."""
         self._load_attributes()
         return self._properties
+
+
+    def append(self, content, below_headline=None, create_if_not_found=False, ensure_newline=False, silent=False):
+        """
+        Append `content` to this note.
+
+        Appends `content` to the end of the note at `filename`.
+        If `below_headline` is set, append below that headline instead.
+        `below_headline` should contain the full exact line of how the headline appears in the note.
+        """
+        return self.vault(
+            "note", "append",
+            file=self.filepath, content=content,
+            below_headline=below_headline,
+            create_if_not_found=create_if_not_found,
+            ensure_newline=ensure_newline,
+            silent=silent
+        )
+
+    def prepend(self, content, below_headline=None, create_if_not_found=False, ensure_newline=False, silent=False):
+        """
+        Prepend `content` to this note.
+
+        By default the `content` is placed just after the front matter.
+        For more details see :meth:`note_append`.
+        """
+        return self.vault(
+            "note", "prepend",
+            file=self.filepath, content=content,
+            below_headline=below_headline,
+            create_if_not_found=create_if_not_found,
+            ensure_newline=ensure_newline,
+            silent=silent
+        )
+
+    def open(self, ):
+        """Open this note in Obsidian."""
+        return self("note", "open", file=self.filepath)
 
 
 class Commands(UserDict):
