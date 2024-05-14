@@ -71,6 +71,20 @@ class Vault:
 
         return DataviewQuery(self, full_source, fields=fields)
 
+    def search(self, query, open=False) -> "Notes":
+        """
+        Run a search over all notes.
+
+        If `open` the search will be opened within Obsidian.
+        Otherwise, the results are returned as `notes`.
+        """
+        if open:
+            return self("search", "open", query=query)
+        else:
+            result = self("search", "all-notes", query=query)
+            return Notes(self, result)
+
+
     def file_list(self, ):
         """List all files (not just notes) in the vault."""
         return self("file", "list")
