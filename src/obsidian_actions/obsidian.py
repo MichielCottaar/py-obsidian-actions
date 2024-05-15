@@ -422,12 +422,12 @@ class Note:
 
     def open(self, ):
         """Open this note in Obsidian."""
-        return self("note", "open", file=self.filepath)
+        return self.vault("note", "open", file=self.filepath)
 
     def replace(self, search: str, replace: str, silent=False, regex=False):
         """Replace text `search` with text `replace` within this note."""
         cmd = "search-regex-and-replace" if regex else "search-string-and-replace"
-        return self("note", cmd, file=self.filepath, search=search, replace=replace, silent=silent)
+        return self.vault("note", cmd, file=self.filepath, search=search, replace=replace, silent=silent)
 
     def delete(self, trash=False):
         """
@@ -435,7 +435,7 @@ class Note:
 
         Trash the note instead if `trash` is set to True.
         """
-        return self("note", "trash" if trash else "delete", file=self.filepath)
+        return self.vault("note", "trash" if trash else "delete", file=self.filepath)
 
     def __repr__(self, ):
         """Represent note with its name."""
