@@ -242,7 +242,7 @@ class Vault:
 
 
 class Tags:
-    """All tabs being used in the vault."""
+    """All tags being used in the vault."""
 
     def __init__(self, vault: Vault, tags: Collection[Union[str, "Tag"]]=None):
         """Create new `Tags` for given `vault`."""
