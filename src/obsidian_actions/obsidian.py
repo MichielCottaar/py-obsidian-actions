@@ -56,7 +56,7 @@ class Vault:
         Otherwise, a LIST query is run.
         """
         if len(sources) == 0:
-            raise ValueError("At least a signle source should be provided for a dataview query.")
+            raise ValueError("At least a single source should be provided for a dataview query.")
         if combine not in ("and", "or") and len(sources) > 1:
             raise ValueError(f"Sources can only be combined using and/or, not {combine}.")
 
