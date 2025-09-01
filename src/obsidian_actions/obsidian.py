@@ -339,6 +339,15 @@ class Note:
             attr = "_" + param.replace("-", "_")
             setattr(self, attr, reply_get[param])
 
+        self._fix_properties()
+
+    def _fix_properties(self, ):
+        """Fix issues with the default properties loading."""
+        for key, value in self._properties.items():
+            if isinstance(value, list) and all(isinstance(v, dict) for v in value):
+                # list of dictionaries should just be a single dictionary
+                self._properties[key] = {k: v for d in value for k, v in d.items()}
+
     @property
     def filepath(self, ) -> str:
         """Return file path of note relative to vault root folder."""
