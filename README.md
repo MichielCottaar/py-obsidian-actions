@@ -1,5 +1,4 @@
 Python interface to the obsidian-actions-uri (https://github.com/czottmann/obsidian-actions-uri).
-This package is still in alpha stage and being actively written.
 
 # Installation
 ```shell
