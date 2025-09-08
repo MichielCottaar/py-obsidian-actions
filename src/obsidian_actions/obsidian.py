@@ -368,7 +368,7 @@ class Note:
     @property
     def path(self, ) -> str:
         """Return full path of note."""
-        return self.vault.base_path + "/" + self.filepath
+        return self.vault.base_path + "/" + self.path_internal
 
     @property
     def content(self, ) -> str:
