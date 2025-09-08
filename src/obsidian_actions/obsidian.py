@@ -511,7 +511,7 @@ class Commands(UserDict):
 
     @property
     def _attributes(self, ):
-        """Return commands as dictionary with cleaned IDs."""
+        """Return commands as dictionary with IDs cleaned to be used as attributes."""
         return {command.id.replace(":", "_").replace("-", "_"): command for command in self.as_list}
 
     def __dir__(self, ):
