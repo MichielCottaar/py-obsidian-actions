@@ -208,11 +208,15 @@ class Vault:
         """Return information about plugin and Obsidian."""
         return self("info")
 
+    def info_vault(self, ):
+        """Return information about vault."""
+        return self("vault", "info")
+
     @property
     def base_path(self, ) -> str:
         """Return base path of the vault."""
         if not hasattr(self, "_base_path"):
-            self._base_path = self("info")["result-base-path"]
+            self._base_path = self.info_vault()["base-path"]
         return self._base_path
 
     @property
