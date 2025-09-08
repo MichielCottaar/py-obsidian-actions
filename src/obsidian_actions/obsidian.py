@@ -258,9 +258,15 @@ class Tags:
     def __init__(self, vault: Vault, tags: Collection[Union[str, "Tag"]]=None):
         """Create new `Tags` for given `vault`."""
         self.vault = vault
-        if tags is None:
-            tags = self.vault("tags", "list")
-        self.list = [tag if isinstance(tag, Tag) else Tag(tag) for tag in tags]
+        self.use_tags = tags
+
+    @property
+    def list(self, ):
+        """Return list of tags."""
+        if not hasattr(self, "_list"):
+            self._list = self.use_tags if self.use_tags is not None else self.vault("tags", "list")
+            self._list = [tag if isinstance(tag, Tag) else Tag(tag) for tag in self._list]
+        return self._list
 
     @property
     def _attributes(self, ):
@@ -308,10 +314,16 @@ class Notes(UserDict):
     def __init__(self, vault: Vault, notes: Collection[Union[str, "Note"]]=None):
         """Create a new set of notes from the `vault`."""
         self.vault = vault
-        if notes is None:
-            notes = self.vault("note", "list")
-        as_list = [note if isinstance(note, Note) else Note(vault, note) for note in notes]
-        self.data = {note.name: note for note in as_list}
+        self.use_notes = notes
+
+    @property
+    def data(self, ):
+        """Return notes as dictionary."""
+        if not hasattr(self, "_data"):
+            notes = self.use_notes if self.use_notes is not None else self.vault("note", "list")
+            as_list = [note if isinstance(note, Note) else Note(self.vault, note) for note in notes]
+            self._data = {note.name: note for note in as_list}
+        return self._data
 
     def __repr__(self, ):
         """Return string representation of notes."""
@@ -478,18 +490,31 @@ class Commands(UserDict):
     def __init__(self, vault: Vault):
         """Create a new set of commands available in the `vault`."""
         self.vault = vault
-        commands = self.vault("command", "list")
-        as_list = [command if isinstance(command, Command) else Command(vault, **command) for command in commands]
-        self.data = {command.id: command for command in as_list}
 
-        self._attributes = {command.id.replace(":", "_").replace("-", "_"): command for command in as_list}
+    @property
+    def as_list(self, ):
+        """Return list of commands."""
+        if not hasattr(self, "_as_list"):
+            commands = self.vault("command", "list")
+            self._as_list = [command if isinstance(command, Command) else Command(self.vault, **command) for command in commands]
+        return self._as_list
+
+    @property
+    def data(self, ):
+        """Return commands as dictionary."""
+        return {command.id: command for command in self.as_list}
+
+    @property
+    def _attributes(self, ):
+        """Return commands as dictionary with cleaned IDs."""
+        return {command.id.replace(":", "_").replace("-", "_"): command for command in self.as_list}
 
     def __dir__(self, ):
-        """Allow tags to ge accessed using autocomplete."""
+        """Allow commands to get accessed using autocomplete."""
         return ["data", "update"] + list(self._attributes.keys())
 
     def __getattr__(self, name: str):
-        """Get a specific tag."""
+        """Get a specific command."""
         if name in self._attributes.keys():
             return self._attributes[name]
         raise AttributeError(f"Command with id {name} is not used in this vault.")
