@@ -20,12 +20,13 @@ class Vault:
     Actions are available as methods of the `Vault` class.
     """
 
-    def __init__(self, name) -> None:
+    def __init__(self, name, verbose=False) -> None:
         """Prepare to run actions in Obsidian vault with the given `name`."""
         self.name = name
         self.commands = Commands(self)
         self.tags = Tags(self)
         self.notes = Notes(self)
+        self.verbose = verbose
 
     def __call__(self, *actions, **kwargs):
         """
@@ -36,6 +37,8 @@ class Vault:
         Some of the actions are available as direct method calls on this class.
         """
         use_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        if self.verbose:
+            print(f"Calling actions-uri with vault={self.name}, actions={actions}, kwargs={use_kwargs}")
         result = xcall("obsidian", "actions-uri", *actions, vault=self.name, **use_kwargs)
         if len(result) == 1:
             return list(result.values())[0]
