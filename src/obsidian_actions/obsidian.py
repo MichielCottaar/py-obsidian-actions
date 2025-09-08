@@ -520,6 +520,8 @@ class Commands(UserDict):
 
     def __getattr__(self, name: str):
         """Get a specific command."""
+        if name == "_as_list":
+            raise AttributeError()
         if name in self._attributes.keys():
             return self._attributes[name]
         raise AttributeError(f"Command with id {name} is not used in this vault.")
