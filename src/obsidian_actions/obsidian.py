@@ -282,6 +282,8 @@ class Tags:
 
     def __getattr__(self, name: str):
         """Get a specific tag."""
+        if name == "_list":
+            raise AttributeError()
         if name in self._attributes.keys():
             return self._attributes[name]
         raise AttributeError(f"Tag with name {name} is not used in this vault.")
