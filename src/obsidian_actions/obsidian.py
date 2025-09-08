@@ -209,6 +209,13 @@ class Vault:
         return self("info")
 
     @property
+    def base_path(self, ) -> str:
+        """Return base path of the vault."""
+        if not hasattr(self, "_base_path"):
+            self._base_path = self("info")["result-base-path"]
+        return self._base_path
+
+    @property
     def active_note(self, ) -> "Note":
         """Get the currently active note."""
         as_dict = self("note", "get-active")
@@ -349,10 +356,15 @@ class Note:
                 self._properties[key] = {k: v for d in value for k, v in d.items()}
 
     @property
-    def filepath(self, ) -> str:
+    def path_internal(self, ) -> str:
         """Return file path of note relative to vault root folder."""
         self._load_attributes()
         return self._filepath
+
+    @property
+    def path(self, ) -> str:
+        """Return full path of note."""
+        return self.vault.base_path + "/" + self.filepath
 
     @property
     def content(self, ) -> str:
